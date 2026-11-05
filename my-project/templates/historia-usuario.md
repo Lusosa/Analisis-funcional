@@ -8,7 +8,7 @@
 | Fecha | [AAAA-MM-DD / Por confirmar] |
 | Autor | [Autor confirmado / Por confirmar] |
 | Versión | [Versión de la historia] |
-| Producto/componente | [Dynamics 365 Sales / Customer Insights - Data / Customer Insights - Journeys / Por confirmar] |
+| Producto/componente | [Producto, sistema o componente aplicable al cliente / Por confirmar] |
 
 Reemplazar los placeholders con información respaldada. Usar “Pendiente de confirmación” y su referencia cuando falte información; indicar “No aplica” con motivo cuando corresponda. Conservar los IDs existentes y no reutilizarlos. No asignar prioridades, estimaciones, responsables ni fechas por inferencia.
 

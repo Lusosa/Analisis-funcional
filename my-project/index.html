@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#173b34">
-  <title>AFU | Conversor a Azure DevOps</title>
+  <title>AFU | Wemox</title>
   <style>
     :root {
       color-scheme: light;
@@ -116,7 +116,7 @@
       margin: 0;
       color: var(--forest);
       font-family: Georgia, "Times New Roman", serif;
-      font-size: clamp(30px, 4vw, 43px);
+      font-size: 38px;
       font-weight: 400;
       line-height: 1.08;
     }
@@ -340,11 +340,33 @@
 
     .footer strong { color: #43544c; font-weight: 650; }
 
+    [hidden] { display: none !important; }
+    .context-band { padding: 20px 0; border-bottom: 1px solid var(--line); }
+    .context-band p { margin: 0 0 10px; font-size: 14px; line-height: 1.6; }
+    .context-band h2 { font-size: 16px; margin: 0 0 12px; }
+    .context-row { display: flex; gap: 20px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+    .context-row label { font-size: 13px; }
+    .context-fields { max-width: 700px; }
+    .context-fields input, .chat-controls select { font: 14px var(--sans); }
+    .view-tabs { display: flex; gap: 0; margin-top: 20px; border-bottom: 1px solid var(--line); }
+    .view-tabs button { border: 0; border-bottom: 3px solid transparent; border-radius: 0; padding: 12px 18px; }
+    .view-tabs button[aria-selected="true"] { border-bottom-color: var(--forest); background: var(--soft-green); }
+    .chat-controls { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 18px 0; font-size: 13px; }
+    .chat-controls select { max-width: 100%; min-height: 36px; border: 1px solid var(--line); background: var(--white); padding: 5px 10px; border-radius: 4px; }
+    .chat-log { min-height: 220px; max-height: 480px; overflow: auto; border-top: 1px solid var(--line); }
+    .chat-message { padding: 15px 0; border-bottom: 1px solid var(--line); }
+    .chat-message strong { display: block; font-size: 12px; color: var(--forest); margin-bottom: 6px; }
+    .chat-message p { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.6; margin: 0; font-size: 14px; }
+    .chat-message[data-role="user"] { border-left: 3px solid var(--lime); padding-left: 14px; }
+    #chat-input { min-height: 110px; resize: vertical; }
+    .chat-actions { justify-content: space-between; }
+
     @media (max-width: 760px) {
       .topbar { padding: 0 4vw; }
       main { width: 92vw; padding-top: 27px; }
       .intro { align-items: start; flex-direction: column; gap: 13px; }
       .intro-note { max-width: 480px; }
+      h1 { font-size: 30px; }
       .workspace { grid-template-columns: minmax(0, 1fr); gap: 27px; }
       textarea, .output-wrap { min-height: 320px; }
       .footer { flex-direction: column; gap: 6px; }
@@ -357,20 +379,72 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="brand"><span class="brand-mark" aria-hidden="true">A</span><span>AFU / HERRAMIENTAS</span></div>
+    <div class="brand"><span class="brand-mark" aria-hidden="true">A</span><span>WEMOX / AFU</span></div>
     <div class="local-state">Procesamiento local</div>
   </header>
 
   <main>
     <section class="intro" aria-labelledby="page-title">
       <div>
-        <p class="eyebrow">Historias de usuario</p>
-        <h1 id="page-title">Conversor a Azure DevOps</h1>
+        <p class="eyebrow">Análisis funcional</p>
+        <h1 id="page-title">Analista Funcional Unificado</h1>
       </div>
-      <p class="intro-note">Transforma una HU AFU y revisa la trazabilidad antes de llevarla a tu backlog.</p>
+      <p class="intro-note">Wemox · Borradores para revisión humana</p>
     </section>
 
-    <section class="workspace" aria-label="Conversión de historia de usuario">
+    <section class="context-band" aria-labelledby="context-heading">
+      <h2 id="context-heading">Contexto de trabajo</h2>
+      <div id="context-confirmed" hidden>
+        <p id="context-summary" role="status"></p>
+        <button class="button" id="change-context" type="button">Cambiar contexto</button>
+      </div>
+      <form id="context-form">
+        <p>¡Hola! Soy AFU, tu asistente de análisis funcional de Wemox. Para comenzar, necesito conocer el contexto de tu trabajo:</p>
+        <div class="context-row">
+          <label><input type="radio" name="context-mode" value="project" checked> Cliente y proyecto</label>
+          <label><input type="radio" name="context-mode" value="general"> Consulta general de análisis funcional</label>
+        </div>
+        <div id="project-fields">
+          <div class="metadata-fields context-fields">
+            <label for="context-client">1. ¿Con qué cliente estás trabajando?
+              <input id="context-client" maxlength="200" autocomplete="off" required>
+            </label>
+            <label for="context-project">2. ¿Cuál es el nombre del proyecto o producto?
+              <input id="context-project" maxlength="200" autocomplete="off" required>
+            </label>
+          </div>
+          <div class="context-row"><label><input type="checkbox" id="new-project"> Es un proyecto nuevo</label></div>
+        </div>
+        <button class="button button-primary" type="submit">Confirmar contexto</button>
+      </form>
+    </section>
+
+    <div class="view-tabs" role="tablist" aria-label="Vistas de AFU">
+      <button class="button" role="tab" id="assistant-tab" aria-controls="assistant-view" aria-selected="true">Asistente</button>
+      <button class="button" role="tab" id="converter-tab" aria-controls="converter-view" aria-selected="false">Conversor</button>
+    </div>
+
+    <section id="assistant-view" role="tabpanel" aria-labelledby="assistant-tab">
+      <div class="chat-controls">
+        <label for="ai-model">Modelo local</label>
+        <select id="ai-model" disabled><option>Sin modelos disponibles</option></select>
+        <button class="button" id="refresh-models" type="button">Actualizar modelos</button>
+        <span id="ai-status" role="status">Comprobando Ollama…</span>
+      </div>
+      <div class="chat-log" id="chat-log" role="log" aria-label="Conversación con AFU" aria-live="polite"></div>
+      <form id="chat-form">
+        <label for="chat-input">Consulta del analista</label>
+        <div class="editor-wrap"><textarea id="chat-input" maxlength="16000" required disabled spellcheck="true"></textarea></div>
+        <div class="actions chat-actions">
+          <button class="button button-primary" id="chat-send" type="submit" disabled>Enviar consulta</button>
+          <button class="button" id="chat-cancel" type="button" hidden>Cancelar generación</button>
+          <button class="button" id="use-ai-draft" type="button" disabled>Llevar respuesta al conversor</button>
+        </div>
+        <p class="message" id="chat-status" role="status"></p>
+      </form>
+    </section>
+
+    <section id="converter-view" role="tabpanel" aria-labelledby="converter-tab" class="workspace" aria-label="Conversión de historia de usuario" hidden>
       <div class="pane">
         <div class="pane-head">
           <h2 class="pane-title"><span class="step">01</span> Historia AFU</h2>
@@ -411,7 +485,7 @@
     </section>
 
     <footer class="footer">
-      <span><strong>AFU</strong> · Conversión de borradores funcionales</span>
+      <span><strong>AFU · Wemox</strong> · Azure DevOps: Pruebas Github / Product Backlog Item</span>
       <span>La validación no sustituye la revisión humana.</span>
     </footer>
   </main>
@@ -630,7 +704,7 @@
     }
     dropZone.addEventListener('drop', (event) => loadFile(event.dataTransfer.files[0]));
 
-    document.querySelector('#example-button').click();
   </script>
+  <script type="module" src="/web-chat.mjs"></script>
 </body>
 </html>

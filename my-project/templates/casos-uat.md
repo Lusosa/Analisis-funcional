@@ -5,7 +5,7 @@
 | ID | [TC-XX] |
 | Título | [Comportamiento funcional que se verifica] |
 | Versión del caso | [Versión] |
-| Producto/componente | [Dynamics 365 Sales / Customer Insights - Data / Customer Insights - Journeys / Por confirmar] |
+| Producto/componente | [Producto, sistema o componente aplicable al cliente / Por confirmar] |
 | HU relacionada | [HU existente y ubicación] |
 | Escenario | [Positivo / Alternativo / Excepción / Clasificación local] |
 

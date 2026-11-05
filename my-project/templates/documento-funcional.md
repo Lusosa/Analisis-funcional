@@ -8,7 +8,7 @@
 | Fecha | [AAAA-MM-DD / Por confirmar] |
 | Autor | [Autor confirmado / Por confirmar] |
 | Versión | [Versión del documento] |
-| Producto/componente | [Dynamics 365 Sales / Customer Insights - Data / Customer Insights - Journeys / Por confirmar] |
+| Producto/componente | [Producto, sistema o componente aplicable al cliente / Por confirmar] |
 
 Reemplazar los placeholders con información respaldada. Usar “Pendiente de confirmación” para datos faltantes y relacionarlos con su registro; usar “No aplica” con motivo cuando corresponda. Conservar IDs existentes y no reutilizarlos. Todos los ejemplos y datos de prueba deben ser sintéticos; no incluir datos reales, información sensible ni secretos.
 

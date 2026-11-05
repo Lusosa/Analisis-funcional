@@ -6,6 +6,7 @@ import { createServer } from 'node:http';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { convert } from './to-ado.mjs';
+import { chat, defaultModel, getModels, validateChat } from './local-ai.mjs';
 
 const projectDirectory = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const host = '127.0.0.1';
@@ -14,6 +15,7 @@ const maxBodyBytes = 1_000_000;
 const adoOrganization = process.env.AZDO_ORG || 'CEDIConsulting';
 const adoProject = process.env.AZDO_PROJECT || 'Pruebas Github';
 const adoWorkItemType = process.env.AZDO_WORK_ITEM_TYPE || 'Product Backlog Item';
+let generatingAnswer = false;
 
 function send(response, status, contentType, body) {
   response.writeHead(status, {
@@ -49,6 +51,67 @@ const server = createServer(async (request, response) => {
   const url = new URL(request.url, `http://${host}:${port}`);
 
   try {
+    if (request.method === 'GET' && url.pathname === '/web-chat.mjs') {
+      send(response, 200, 'text/javascript; charset=utf-8', await readFile(resolve(projectDirectory, 'web-chat.mjs')));
+      return;
+    }
+
+    if (request.method === 'GET' && url.pathname === '/api/ai/status') {
+      try {
+        send(response, 200, 'application/json; charset=utf-8', JSON.stringify({
+          available: true, models: await getModels(), defaultModel,
+        }));
+      } catch {
+        send(response, 200, 'application/json; charset=utf-8', JSON.stringify({
+          available: false, models: [], defaultModel,
+        }));
+      }
+      return;
+    }
+
+    if (request.method === 'POST' && url.pathname === '/api/ai/chat') {
+      const expectedOrigin = `http://${request.headers.host}`;
+      if (!/^127\.0\.0\.1:\d+$/.test(request.headers.host ?? '')
+        || request.headers.origin !== expectedOrigin
+        || !request.headers['content-type']?.startsWith('application/json')) {
+        send(response, 403, 'application/json; charset=utf-8', JSON.stringify({ error: 'Solicitud local no autorizada.' }));
+        return;
+      }
+      const payload = JSON.parse(await readRequestBody(request));
+      try {
+        validateChat(payload);
+      } catch (error) {
+        send(response, 400, 'application/json; charset=utf-8', JSON.stringify({ error: error.message }));
+        return;
+      }
+      if (generatingAnswer) {
+        send(response, 429, 'application/json; charset=utf-8', JSON.stringify({
+          error: 'Hay otra respuesta en generación. Volvé a intentar cuando termine.',
+        }));
+        return;
+      }
+      generatingAnswer = true;
+      const controller = new AbortController();
+      const onClose = () => {
+        if (!response.writableEnded) controller.abort();
+      };
+      response.once('close', onClose);
+      try {
+        const answer = await chat(payload, fetch, controller.signal);
+        if (!response.destroyed) send(response, 200, 'application/json; charset=utf-8', JSON.stringify(answer));
+      } catch {
+        if (!response.destroyed) {
+          send(response, 503, 'application/json; charset=utf-8', JSON.stringify({
+            error: 'No se pudo generar la respuesta en el tiempo disponible. Verificá Ollama y la memoria libre. Probá con una consulta más breve; el límite de generación es de 90 segundos.',
+          }));
+        }
+      } finally {
+        response.removeListener('close', onClose);
+        generatingAnswer = false;
+      }
+      return;
+    }
+
     if (request.method === 'GET' && url.pathname === '/') {
       const page = await readFile(resolve(projectDirectory, 'index.html'));
       send(response, 200, 'text/html; charset=utf-8', page);

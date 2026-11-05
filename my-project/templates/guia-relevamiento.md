@@ -16,7 +16,7 @@ Reemplazar los placeholders con información respaldada. Registrar los vacíos c
 
 # Alcance
 
-- Producto/componente: [Dynamics 365 Sales / Customer Insights - Data / Customer Insights - Journeys / Por confirmar].
+- Producto/componente: [Producto, sistema o componente aplicable al cliente / Por confirmar].
 - Proceso o escenario: [Descripción].
 - Áreas funcionales: [Áreas incluidas].
 - Límites y restricciones: [Definiciones respaldadas y fuentes].
