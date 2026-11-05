@@ -1,0 +1,636 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#173b34">
+  <title>AFU | Conversor a Azure DevOps</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #202c29;
+      --muted: #64716c;
+      --forest: #173b34;
+      --forest-light: #28574d;
+      --lime: #d9e76a;
+      --coral: #d56b55;
+      --paper: #f4f3ed;
+      --white: #fffefa;
+      --line: #d9ddd4;
+      --soft-green: #e9eee4;
+      --error: #a63c2d;
+      --mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+      --sans: "Segoe UI", "Aptos", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      color: var(--ink);
+      background-color: var(--paper);
+      background-image: radial-gradient(#a6b1a51f 0.7px, transparent 0.7px);
+      background-size: 13px 13px;
+      font-family: var(--sans);
+    }
+
+    button, textarea { font: inherit; }
+
+    .topbar {
+      min-height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 5vw;
+      color: #f8f8ed;
+      background: var(--forest);
+      border-bottom: 4px solid var(--lime);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: .08em;
+    }
+
+    .brand-mark {
+      width: 29px;
+      height: 29px;
+      display: grid;
+      place-items: center;
+      color: var(--forest);
+      background: var(--lime);
+      border-radius: 4px;
+      font-family: Georgia, serif;
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    .local-state {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #d7e4d8;
+      font-size: 12px;
+    }
+
+    .local-state::before {
+      width: 7px;
+      height: 7px;
+      content: "";
+      background: var(--lime);
+      border-radius: 50%;
+    }
+
+    main {
+      width: min(1440px, 92vw);
+      margin: 0 auto;
+      padding: 38px 0 28px;
+    }
+
+    .intro {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 24px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid #c7cec4;
+    }
+
+    .eyebrow {
+      margin: 0 0 9px;
+      color: #507166;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      color: var(--forest);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(30px, 4vw, 43px);
+      font-weight: 400;
+      line-height: 1.08;
+    }
+
+    .intro-note {
+      max-width: 290px;
+      margin: 0 0 3px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 28px;
+      padding-top: 23px;
+    }
+
+    .pane { min-width: 0; }
+
+    .pane-head {
+      min-height: 41px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .pane-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0;
+      color: var(--forest);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .step {
+      width: 24px;
+      height: 24px;
+      display: inline-grid;
+      place-items: center;
+      color: var(--forest);
+      background: var(--lime);
+      border-radius: 50%;
+      font-size: 11px;
+    }
+
+    .pane-meta {
+      color: var(--muted);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .metadata-fields {
+      display: grid;
+      grid-template-columns: minmax(110px, .7fr) minmax(0, 2fr);
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .metadata-fields label {
+      display: grid;
+      gap: 5px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 650;
+    }
+
+    .metadata-fields input {
+      width: 100%;
+      min-height: 36px;
+      padding: 0 10px;
+      color: var(--ink);
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      font: 12px var(--mono);
+    }
+
+    .metadata-fields input:focus-visible {
+      outline: 3px solid #28574d24;
+      border-color: var(--forest-light);
+    }
+
+    .editor-wrap {
+      position: relative;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      background: var(--white);
+      transition: border-color .18s, box-shadow .18s;
+    }
+
+    .editor-wrap:focus-within {
+      border-color: var(--forest-light);
+      box-shadow: 0 0 0 3px #28574d18;
+    }
+
+    .editor-wrap.dragging {
+      border-color: var(--coral);
+      box-shadow: 0 0 0 3px #d56b5524;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 480px;
+      display: block;
+      padding: 18px 19px;
+      resize: vertical;
+      color: #34423d;
+      background: transparent;
+      border: 0;
+      outline: 0;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.75;
+      tab-size: 2;
+    }
+
+    textarea::placeholder { color: #a2aaa3; }
+
+    .output-wrap {
+      min-height: 480px;
+      padding: 18px 20px;
+      overflow: auto;
+      color: #e8eee8;
+      background: #202c29;
+      border: 1px solid #202c29;
+      border-radius: 5px;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.8;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .output-placeholder {
+      color: #a4b4aa;
+      font-family: var(--sans);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .actions {
+      min-height: 53px;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 12px;
+    }
+
+    .actions-end { justify-content: flex-end; }
+
+    .button {
+      min-height: 38px;
+      padding: 0 13px;
+      color: var(--forest);
+      background: transparent;
+      border: 1px solid #aeb9ae;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 650;
+      transition: background-color .15s, border-color .15s, transform .15s;
+    }
+
+    .button:hover:not(:disabled) {
+      background: #e6ebe2;
+      border-color: var(--forest-light);
+    }
+
+    .button:active:not(:disabled) { transform: translateY(1px); }
+    .button:focus-visible { outline: 3px solid #d56b5566; outline-offset: 2px; }
+    .button:disabled { cursor: not-allowed; opacity: .5; }
+
+    .button-primary {
+      color: #f8f8ed;
+      background: var(--forest);
+      border-color: var(--forest);
+    }
+
+    .button-primary:hover:not(:disabled) {
+      color: var(--forest);
+      background: var(--lime);
+      border-color: var(--lime);
+    }
+
+    .button-quiet {
+      min-height: 32px;
+      padding: 0 9px;
+      border-color: transparent;
+      font-size: 11px;
+    }
+
+    .file-input { display: none; }
+
+    .message {
+      min-height: 22px;
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .message.error { color: var(--error); }
+    .message.success { color: #356b4e; }
+    .message.warning { color: #825314; }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding-top: 17px;
+      border-top: 1px solid #c7cec4;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .footer strong { color: #43544c; font-weight: 650; }
+
+    @media (max-width: 760px) {
+      .topbar { padding: 0 4vw; }
+      main { width: 92vw; padding-top: 27px; }
+      .intro { align-items: start; flex-direction: column; gap: 13px; }
+      .intro-note { max-width: 480px; }
+      .workspace { grid-template-columns: minmax(0, 1fr); gap: 27px; }
+      textarea, .output-wrap { min-height: 320px; }
+      .footer { flex-direction: column; gap: 6px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">A</span><span>AFU / HERRAMIENTAS</span></div>
+    <div class="local-state">Procesamiento local</div>
+  </header>
+
+  <main>
+    <section class="intro" aria-labelledby="page-title">
+      <div>
+        <p class="eyebrow">Historias de usuario</p>
+        <h1 id="page-title">Conversor a Azure DevOps</h1>
+      </div>
+      <p class="intro-note">Transforma una HU AFU y revisa la trazabilidad antes de llevarla a tu backlog.</p>
+    </section>
+
+    <section class="workspace" aria-label="Conversión de historia de usuario">
+      <div class="pane">
+        <div class="pane-head">
+          <h2 class="pane-title"><span class="step">01</span> Historia AFU</h2>
+          <span class="pane-meta" id="input-meta">Markdown</span>
+        </div>
+        <div class="metadata-fields">
+          <label for="hu-id">ID HU
+            <input id="hu-id" type="text" autocomplete="off" placeholder="HU03">
+          </label>
+          <label for="hu-title">Título para Azure DevOps
+            <input id="hu-title" type="text" autocomplete="off" placeholder="Completar si no viene en el texto">
+          </label>
+        </div>
+        <div class="editor-wrap" id="drop-zone">
+          <textarea id="source" aria-label="Contenido Markdown de la historia" spellcheck="false" placeholder="Pegá aquí una historia AFU en Markdown o abrí un archivo .md..."></textarea>
+        </div>
+        <div class="actions">
+          <label class="button" for="file-picker">Abrir archivo .md</label>
+          <input class="file-input" id="file-picker" type="file" accept=".md,.markdown,text/markdown,text/plain">
+          <button class="button button-quiet" id="example-button" type="button">Cargar HU de ejemplo</button>
+          <button class="button button-primary" id="convert-button" type="button">Convertir historia</button>
+        </div>
+        <p class="message" id="input-message" aria-live="polite">El archivo se procesa en esta instancia local.</p>
+      </div>
+
+      <div class="pane">
+        <div class="pane-head">
+          <h2 class="pane-title"><span class="step">02</span> Resultado</h2>
+          <span class="pane-meta" id="result-meta">Esperando conversión</span>
+        </div>
+        <div class="output-wrap" id="result" role="region" aria-label="Resultado para Azure DevOps" aria-live="polite"><span class="output-placeholder">La historia convertida aparecerá aquí.</span></div>
+        <div class="actions actions-end">
+          <button class="button button-primary" id="create-ado-button" type="button" disabled>Crear en Azure DevOps</button>
+          <button class="button" id="copy-button" type="button" disabled>Copiar resultado</button>
+        </div>
+        <p class="message" id="result-message" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span><strong>AFU</strong> · Conversión de borradores funcionales</span>
+      <span>La validación no sustituye la revisión humana.</span>
+    </footer>
+  </main>
+
+  <script>
+    const source = document.querySelector('#source');
+    const result = document.querySelector('#result');
+    const inputMeta = document.querySelector('#input-meta');
+    const inputMessage = document.querySelector('#input-message');
+    const resultMeta = document.querySelector('#result-meta');
+    const resultMessage = document.querySelector('#result-message');
+    const convertButton = document.querySelector('#convert-button');
+    const createAdoButton = document.querySelector('#create-ado-button');
+    const copyButton = document.querySelector('#copy-button');
+    const huIdInput = document.querySelector('#hu-id');
+    const huTitleInput = document.querySelector('#hu-title');
+    const filePicker = document.querySelector('#file-picker');
+    const dropZone = document.querySelector('#drop-zone');
+    let currentFileName = '';
+    let currentWarnings = [];
+
+    function conversionPayload(markdown) {
+      return { markdown, huId: huIdInput.value.trim(), title: huTitleInput.value.trim() };
+    }
+
+    function setInputMessage(text, state = '') {
+      inputMessage.textContent = text;
+      inputMessage.className = `message ${state}`;
+    }
+
+    function showErrors(errors) {
+      result.replaceChildren();
+      const list = document.createElement('div');
+      list.className = 'output-placeholder';
+      const title = document.createElement('strong');
+      title.textContent = 'No se pudo convertir';
+      list.append(title);
+      const details = document.createElement('ul');
+      details.style.paddingLeft = '20px';
+      for (const error of errors) {
+        const item = document.createElement('li');
+        item.textContent = error;
+        details.append(item);
+      }
+      list.append(details);
+      result.append(list);
+      resultMeta.textContent = `${errors.length} observación${errors.length === 1 ? '' : 'es'}`;
+      resultMessage.textContent = 'Completá los datos requeridos en la historia y volvé a convertir.';
+      resultMessage.className = 'message error';
+      copyButton.disabled = true;
+      createAdoButton.disabled = true;
+    }
+
+    async function convertStory() {
+      const markdown = source.value.trim();
+      if (!markdown) {
+        setInputMessage('Pegá una historia o abrí un archivo Markdown.', 'error');
+        return;
+      }
+
+      convertButton.disabled = true;
+      convertButton.textContent = 'Convirtiendo...';
+      resultMessage.textContent = '';
+      try {
+        const response = await fetch('/api/convert', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(conversionPayload(markdown)),
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+          showErrors(payload.errors ?? [payload.error ?? 'No se pudo procesar la historia.']);
+          return;
+        }
+        result.textContent = payload.output;
+        currentWarnings = payload.warnings ?? [];
+        resultMeta.textContent = currentWarnings.length === 1
+          ? '1 observación'
+          : currentWarnings.length > 1
+            ? `${currentWarnings.length} observaciones`
+            : 'Conversión lista';
+        resultMessage.textContent = currentWarnings.length
+          ? `Borrador generado con ${currentWarnings.length} advertencias. Revisá los datos señalados antes de enviarlo.`
+          : 'Revisá el resultado antes de usarlo en Azure DevOps.';
+        resultMessage.className = currentWarnings.length ? 'message warning' : 'message success';
+        copyButton.disabled = false;
+        createAdoButton.disabled = !payload.canCreate;
+        setInputMessage(currentFileName ? `Archivo cargado: ${currentFileName}` : 'Markdown listo para conversión.');
+      } catch {
+        resultMeta.textContent = 'Sin conexión local';
+        resultMessage.textContent = 'No se pudo contactar al servidor. Iniciá tools/preview-server.mjs.';
+        resultMessage.className = 'message error';
+        createAdoButton.disabled = true;
+      } finally {
+        convertButton.disabled = false;
+        convertButton.textContent = 'Convertir historia';
+      }
+    }
+
+    async function loadFile(file) {
+      if (!file) return;
+      if (!/\.md(?:own)?$/i.test(file.name) && file.type !== 'text/plain' && file.type !== 'text/markdown') {
+        setInputMessage('Elegí un archivo Markdown (.md).', 'error');
+        return;
+      }
+      source.value = await file.text();
+      currentFileName = file.name;
+      inputMeta.textContent = `${source.value.split(/\r?\n/).length} líneas`;
+      setInputMessage(`Archivo cargado: ${file.name}`);
+      await convertStory();
+    }
+
+    document.querySelector('#convert-button').addEventListener('click', convertStory);
+    filePicker.addEventListener('change', () => loadFile(filePicker.files[0]));
+    source.addEventListener('input', () => {
+      currentFileName = '';
+      inputMeta.textContent = `${source.value.length.toLocaleString('es-AR')} caracteres`;
+      setInputMessage('Cambios pendientes de conversión.');
+      createAdoButton.disabled = true;
+      copyButton.disabled = true;
+    });
+
+    for (const field of [huIdInput, huTitleInput]) {
+      field.addEventListener('input', () => {
+        createAdoButton.disabled = true;
+        copyButton.disabled = true;
+        setInputMessage('Metadatos modificados; volvé a convertir.');
+      });
+    }
+
+    document.querySelector('#example-button').addEventListener('click', async () => {
+      try {
+        const response = await fetch('/api/example');
+        if (!response.ok) throw new Error('example-unavailable');
+        source.value = await response.text();
+        currentFileName = 'prueba-hu.md';
+        inputMeta.textContent = `${source.value.split(/\r?\n/).length} líneas`;
+        setInputMessage('Ejemplo de HU cargado.');
+        await convertStory();
+      } catch {
+        setInputMessage('No se pudo cargar la HU de ejemplo.', 'error');
+      }
+    });
+
+    copyButton.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(result.textContent);
+        resultMessage.textContent = 'Resultado copiado.';
+        resultMessage.className = 'message success';
+      } catch {
+        resultMessage.textContent = 'No se pudo acceder al portapapeles en este navegador.';
+        resultMessage.className = 'message error';
+      }
+    });
+
+    createAdoButton.addEventListener('click', async () => {
+      const warningNotice = currentWarnings.length
+        ? ` El borrador tiene ${currentWarnings.length} advertencias para revisar.`
+        : '';
+      if (!window.confirm(`Se creará un Product Backlog Item en Pruebas Github.${warningNotice} ¿Confirmás el envío?`)) return;
+
+      createAdoButton.disabled = true;
+      createAdoButton.textContent = 'Enviando...';
+      resultMessage.textContent = 'Enviando a Azure DevOps...';
+      resultMessage.className = 'message';
+      try {
+        const response = await fetch('/api/ado/work-items', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(conversionPayload(source.value)),
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+          const reason = payload.warnings?.join(' ')
+            ?? payload.errors?.join(' ')
+            ?? [payload.error, payload.detail].filter(Boolean).join(' ')
+            ?? 'No se pudo crear el work item.';
+          resultMessage.textContent = reason;
+          resultMessage.className = 'message error';
+          createAdoButton.disabled = false;
+          return;
+        }
+
+        resultMessage.replaceChildren(document.createTextNode(`Creado Product Backlog Item #${payload.id}. `));
+        const link = document.createElement('a');
+        link.href = payload.url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = 'Abrir en Azure DevOps';
+        resultMessage.append(link);
+        resultMessage.className = 'message success';
+        createAdoButton.textContent = 'Work item creado';
+      } catch {
+        resultMessage.textContent = 'No se pudo contactar Azure DevOps. Verificá la conexión y la configuración local.';
+        resultMessage.className = 'message error';
+        createAdoButton.disabled = false;
+      } finally {
+        if (createAdoButton.textContent === 'Enviando...') {
+          createAdoButton.textContent = 'Crear en Azure DevOps';
+          createAdoButton.disabled = false;
+        }
+      }
+    });
+
+    for (const eventName of ['dragenter', 'dragover']) {
+      dropZone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        dropZone.classList.add('dragging');
+      });
+    }
+    for (const eventName of ['dragleave', 'drop']) {
+      dropZone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        dropZone.classList.remove('dragging');
+      });
+    }
+    dropZone.addEventListener('drop', (event) => loadFile(event.dataTransfer.files[0]));
+
+    document.querySelector('#example-button').click();
+  </script>
+</body>
+</html>
